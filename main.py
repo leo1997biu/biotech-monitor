@@ -19,9 +19,10 @@ def get_company_info():
 """
 
 def call_doubao(api_key, info):
-    # ------------- 这里我改成 100% 兼容火山方舟的格式 -------------
+    # ---------------- 官方标准地址（完全正确）----------------
     url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-    
+
+    # ---------------- 官方标准请求头（必须这样写）----------------
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
@@ -55,7 +56,7 @@ def call_doubao(api_key, info):
 
     try:
         r = requests.post(url, headers=headers, json=data, timeout=30)
-        print(r.text)  # 临时看错误信息
+        print(r.text)
         if r.status_code == 200:
             return r.json()["choices"][0]["message"]["content"]
         else:
@@ -74,7 +75,7 @@ def send_email(content):
     msg["Subject"] = f"【再鼎&传奇 30天监控】{datetime.date.today()}"
     msg.attach(MIMEText(content, "plain", "utf-8"))
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+    with smtl ib.SMTP("smtp.gmail.com", 582) as server:
         server.starttls()
         server.login(sender, password)
         server.sendmail(sender, receiver, msg.as_string())
