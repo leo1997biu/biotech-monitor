@@ -1,0 +1,18 @@
+name: 每日自动报告
+on:
+  schedule:
+    - cron: "0 13 * * *"  # 北京时间 21:00 运行
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install requests
+      - run: python main.py
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_AUTH: ${{ secrets.SENDER_AUTH }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
