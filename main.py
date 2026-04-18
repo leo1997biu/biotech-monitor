@@ -3,7 +3,7 @@ import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import requests
+from volcenginesdkarkruntime import Ark
 
 def get_company_info():
     today = datetime.date.today()
@@ -19,12 +19,10 @@ def get_company_info():
 """
 
 def call_doubao(api_key, info):
-    url = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-    
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+    client = Ark(
+        base_url="https://ark.cn-beijing.volces.com/api/v3",
+        api_key=api_key
+    )
 
     prompt = f"""
 你是严谨医药投资分析师，严禁编造，不知道直接写「无」。
@@ -46,20 +44,15 @@ def call_doubao(api_key, info):
 6. 已落地真实利空（无则写「无」）：
 """
 
-    data = {
-        "model": "doubao-seed-2.0-lite",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.1
-    }
-
     try:
-        r = requests.post(url, headers=headers, json=data, timeout=30)
-        if r.status_code == 200:
-            return r.json()["choices"][0]["message"]["content"]
-        else:
-            return f"调用失败 {r.status_code}\n{r.text}"
+        completion = client.chat.completions.create(
+            model="doubao-seed-2.0-lite",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1
+        )
+        return completion.choices[0].message.content
     except Exception as e:
-        return f"异常: {str(e)}"
+        return f"调用异常: {str(e)}"
 
 def send_email(content):
     sender = os.getenv("SENDER_EMAIL")
