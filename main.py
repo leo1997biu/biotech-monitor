@@ -46,7 +46,7 @@ def call_doubao(api_key, info):
 
     try:
         completion = client.chat.completions.create(
-            model="doubao-seed-2.0-lite",
+            model="Doubao-Seed-2.0-lite",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1
         )
