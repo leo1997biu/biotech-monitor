@@ -84,6 +84,5 @@ def send_email(content):
         server.sendmail(sender, receiver, msg.as_string())
 
 if __name__ == "__main__":
-    info = get_company_info()
-    report = call_doubao(os.getenv("DOUBAO_API_KEY"), info)
+    report = call_doubao(os.getenv("DOUBAO_API_KEY"))
     send_email(report)
