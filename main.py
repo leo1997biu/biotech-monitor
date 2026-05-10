@@ -13,7 +13,7 @@ def call_doubao(api_key):
 
     prompt = f"""
 今天日期：{datetime.date.today()}
-你是严谨医药投研分析师，绝对不允许偷懒、不允许概括、不省略信息。请你**先实时联网搜索最新资讯**，不要编造内容。
+你是严谨医药投研分析师，绝对不允许偷懒、不允许概括、不省略信息。请先联网搜索最新资讯！
 
 【严格规则】
 1. 必须逐条列出所有事件，不许合并、不许简写
@@ -57,45 +57,34 @@ SEC、HKEX、公司官网、微信公众号（再鼎医药、传奇生物）、�
 """
 
     try:
-        # 调用联网接口
         completion = client.responses.create(
             model="doubao-seed-2-0-lite-260215",
             input=[{"role": "user", "content": prompt}],
             tools=[{"type": "web_search"}]
         )
 
-        # 1. 获取输出文本
-        output_text = completion.output_text
-
-        # 2. 统计 Token 消耗（稳定属性，不会报错）
+        # --------------------------
+        # 只保留 100% 稳定的 Token 统计
+        # --------------------------
         usage = completion.usage
         prompt_tokens = usage.prompt_tokens
         completion_tokens = usage.completion_tokens
         total_tokens = usage.total_tokens
 
-        # 3. 估算成本（按公开价格）
-        # 输入：0.004元/千tokens
-        # 输出：0.008元/千tokens
+        # 成本计算
         token_cost = (prompt_tokens * 0.004 / 1000) + (completion_tokens * 0.008 / 1000)
 
-        # 邮件里只显示稳定的 Token 成本，去掉不稳定的 steps 统计
         cost_info = f"""
 
 ---
-【本次调用消耗统计】
-Prompt Tokens：{prompt_tokens}
-Completion Tokens：{completion_tokens}
-Total Tokens：{total_tokens}
-
----
-【本次成本估算】
-Token成本：{token_cost:.4f} 元
+【本次消耗】
+Prompt Tokens: {prompt_tokens}
+Completion Tokens: {completion_tokens}
+Total Tokens: {total_tokens}
+Token成本: {token_cost:.4f} 元
 """
 
-        full_report = output_text + cost_info
-        print("✅ 调用成功")
-        print(cost_info)
-        return full_report
+        return completion.output_text + cost_info
 
     except Exception as e:
         return f"调用异常: {str(e)}"
