@@ -57,47 +57,32 @@ SEC、HKEX、公司官网、微信公众号（再鼎医药、传奇生物）、�
 """
 
     try:
+        # 调用联网接口
         completion = client.responses.create(
             model="doubao-seed-2-0-lite-260215",
             input=[{"role": "user", "content": prompt}],
             tools=[{"type": "web_search"}]
         )
 
-        # --------------------------
-        # 统计：联网搜索次数
-        # --------------------------
-        search_count = 0
-        for step in completion.steps:
-            for tool_call in step.tool_calls:
-                if tool_call.type == "web_search":
-                    search_count += 1
+        # 1. 获取输出文本
+        output_text = completion.output_text
 
-        # --------------------------
-        # 统计：Token 消耗
-        # --------------------------
+        # 2. 统计 Token 消耗（稳定属性，不会报错）
         usage = completion.usage
         prompt_tokens = usage.prompt_tokens
         completion_tokens = usage.completion_tokens
         total_tokens = usage.total_tokens
 
-        # --------------------------
-        # 估算成本（豆包Seed 2.0 Lite 公开价格）
-        # --------------------------
-        # 输入：0.004元 / 1k tokens
-        # 输出：0.008元 / 1k tokens
-        # 联网搜索：0.004元 / 次
+        # 3. 估算成本（按公开价格）
+        # 输入：0.004元/千tokens
+        # 输出：0.008元/千tokens
         token_cost = (prompt_tokens * 0.004 / 1000) + (completion_tokens * 0.008 / 1000)
-        search_cost = search_count * 0.004
-        total_cost = token_cost + search_cost
 
-        # --------------------------
-        # 统计信息（会加到邮件末尾）
-        # --------------------------
+        # 邮件里只显示稳定的 Token 成本，去掉不稳定的 steps 统计
         cost_info = f"""
 
 ---
 【本次调用消耗统计】
-联网搜索次数：{search_count} 次
 Prompt Tokens：{prompt_tokens}
 Completion Tokens：{completion_tokens}
 Total Tokens：{total_tokens}
@@ -105,11 +90,9 @@ Total Tokens：{total_tokens}
 ---
 【本次成本估算】
 Token成本：{token_cost:.4f} 元
-搜索成本：{search_cost:.4f} 元
-总成本：{total_cost:.4f} 元
 """
 
-        full_report = completion.output_text + cost_info
+        full_report = output_text + cost_info
         print("✅ 调用成功")
         print(cost_info)
         return full_report
