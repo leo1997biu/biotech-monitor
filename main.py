@@ -57,34 +57,17 @@ SEC、HKEX、公司官网、微信公众号（再鼎医药、传奇生物）、�
 """
 
     try:
-        completion = client.responses.create(
+        # 最稳定、最兼容的调用方式
+        completion = client.chat.completions.create(
             model="doubao-seed-2-0-lite-260215",
-            input=[{"role": "user", "content": prompt}],
-            tools=[{"type": "web_search"}]
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1
         )
 
-        # --------------------------
-        # 只保留 100% 稳定的 Token 统计
-        # --------------------------
-        usage = completion.usage
-        prompt_tokens = usage.prompt_tokens
-        completion_tokens = usage.completion_tokens
-        total_tokens = usage.total_tokens
+        # 这是唯一稳定不会报错的取值方式
+        content = completion.choices[0].message.content
 
-        # 成本计算
-        token_cost = (prompt_tokens * 0.004 / 1000) + (completion_tokens * 0.008 / 1000)
-
-        cost_info = f"""
-
----
-【本次消耗】
-Prompt Tokens: {prompt_tokens}
-Completion Tokens: {completion_tokens}
-Total Tokens: {total_tokens}
-Token成本: {token_cost:.4f} 元
-"""
-
-        return completion.output_text + cost_info
+        return content
 
     except Exception as e:
         return f"调用异常: {str(e)}"
