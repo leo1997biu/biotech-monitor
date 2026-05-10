@@ -11,10 +11,9 @@ def call_doubao(api_key):
         api_key=api_key
     )
 
-    # === 这是你最终版超强提示词，不会丢信息、格式完美 ===
     prompt = f"""
 今天日期：{datetime.date.today()}
-你是严谨医药投研分析师，绝对不允许偷懒、不允许概括、不省略信息。请在回答前重新搜索一下最新的资讯！！！
+你是严谨医药投研分析师，绝对不允许偷懒、不允许概括、不省略信息。请你**先实时联网搜索最新资讯**，不要编造内容。
 
 【严格规则】
 1. 必须逐条列出所有事件，不许合并、不许简写
@@ -56,14 +55,65 @@ SEC、HKEX、公司官网、微信公众号（再鼎医药、传奇生物）、�
 6. 已落地真实利空
 - 有/无，如有请写日期+来源+内容
 """
-   
+
     try:
-        completion = client.chat.completions.create(
+        completion = client.responses.create(
             model="doubao-seed-2-0-lite-260215",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
+            input=[{"role": "user", "content": prompt}],
+            tools=[{"type": "web_search"}]
         )
-        return completion.choices[0].message.content
+
+        # --------------------------
+        # 统计：联网搜索次数
+        # --------------------------
+        search_count = 0
+        for step in completion.steps:
+            for tool_call in step.tool_calls:
+                if tool_call.type == "web_search":
+                    search_count += 1
+
+        # --------------------------
+        # 统计：Token 消耗
+        # --------------------------
+        usage = completion.usage
+        prompt_tokens = usage.prompt_tokens
+        completion_tokens = usage.completion_tokens
+        total_tokens = usage.total_tokens
+
+        # --------------------------
+        # 估算成本（豆包Seed 2.0 Lite 公开价格）
+        # --------------------------
+        # 输入：0.004元 / 1k tokens
+        # 输出：0.008元 / 1k tokens
+        # 联网搜索：0.004元 / 次
+        token_cost = (prompt_tokens * 0.004 / 1000) + (completion_tokens * 0.008 / 1000)
+        search_cost = search_count * 0.004
+        total_cost = token_cost + search_cost
+
+        # --------------------------
+        # 统计信息（会加到邮件末尾）
+        # --------------------------
+        cost_info = f"""
+
+---
+【本次调用消耗统计】
+联网搜索次数：{search_count} 次
+Prompt Tokens：{prompt_tokens}
+Completion Tokens：{completion_tokens}
+Total Tokens：{total_tokens}
+
+---
+【本次成本估算】
+Token成本：{token_cost:.4f} 元
+搜索成本：{search_cost:.4f} 元
+总成本：{total_cost:.4f} 元
+"""
+
+        full_report = completion.output_text + cost_info
+        print("✅ 调用成功")
+        print(cost_info)
+        return full_report
+
     except Exception as e:
         return f"调用异常: {str(e)}"
 
