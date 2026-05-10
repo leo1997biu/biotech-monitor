@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from volcenginesdkarkruntime import Ark
 
-def call_doubao(api_key, info):
+def call_doubao(api_key):
     client = Ark(
         base_url="https://ark.cn-beijing.volces.com/api/v3",
         api_key=api_key
