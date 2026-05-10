@@ -1,86 +1,26 @@
-import os
-import datetime
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from volcenginesdkarkruntime import Ark
+name: Daily Report
+on:
+  schedule:
+    - cron: "0 23 * * *"
+  workflow_dispatch:
 
-def call_doubao(api_key):
-    client = Ark(
-        base_url="https://ark.cn-beijing.volces.com/api/v3",
-        api_key=api_key
-    )
-
-    prompt = f"""
-今天是 {datetime.date.today()}。
-你是医药投研分析师。
-请务必【联网搜索】以下信息，严格按格式输出：
-1. 再鼎医药 ZLAB/09688.HK 最新公告、进展
-2. 传奇生物 LEGN 最新公告、进展
-3. 范俊青最新观点
-
-没有信息就写【无新增】。
-
-【再鼎医药 & 传奇生物 滚动监控报告】
-日期：{datetime.date.today()}
-周期：滚动更新
-
-1. 最新核心事件（按日期从新到旧）
-■ 再鼎医药（ZLAB/09688.HK）
-- 
-■ 传奇生物（LEGN）
-- 
-
-2. 范俊青最新观点（仅公众号/雪球）
-- 
-
-3. 观点一致性判断
-- 再鼎医药：
-- 传奇生物：
-
-4. 对投资逻辑影响（每条分开写）
-- 再鼎医药：
-- 传奇生物：
-
-5. 未来30天确定催化（已公告的才写）
-- 再鼎医药：
-- 传奇生物：
-
-6. 已落地真实利空
-- 
-"""
-
-    try:
-        # ✅ 这是火山方舟 100% 永不报错的标准接口
-        resp = client.chat.completions.create(
-            model="doubao-seed-2-0-lite-260215",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
-        )
-        return resp.choices[0].message.content
-
-    except:
-        return "AI调用成功，但暂无最新内容。"
-
-def send_email(content):
-    try:
-        sender = os.getenv("SENDER_EMAIL")
-        password = os.getenv("SENDER_AUTH")
-        receiver = os.getenv("RECEIVER_EMAIL")
-
-        msg = MIMEMultipart()
-        msg["From"] = sender
-        msg["To"] = receiver
-        msg["Subject"] = f"【再鼎&传奇 每日投研日报】{datetime.date.today()}"
-        msg.attach(MIMEText(content, "plain", "utf-8"))
-
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(sender, password)
-            server.sendmail(sender, receiver, msg.as_string())
-    except:
-        return
-
-if __name__ == "__main__":
-    report = call_doubao(os.getenv("DOUBAO_API_KEY"))
-    send_email(report)
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install volcenginesdkarkruntime requests
+      - name: Run script
+        run: python main.py
+        env:
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_AUTH: ${{ secrets.SENDER_AUTH }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
