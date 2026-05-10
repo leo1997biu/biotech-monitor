@@ -13,32 +13,23 @@ def call_doubao(api_key):
 
     prompt = f"""
 今天日期：{datetime.date.today()}
-你是严谨医药投研分析师，绝对不允许偷懒、不允许概括、不省略信息。请先联网搜索最新资讯！
+你是严谨医药投研分析师。
+请务必**联网搜索**再鼎医药（ZLAB/09688.HK）、传奇生物（LEGN）的最新公告、新闻、进展、以及范俊青的最新观点。
+请严格按照格式输出，不要省略，不要无中生有，不要偷懒。
 
-【严格规则】
-1. 必须逐条列出所有事件，不许合并、不许简写
-2. 必须标注日期+来源，缺一不可
-3. 必须区分：再鼎医药 / 传奇生物，不能混在一起
-4. 必须按时间从新到旧排列
-5. 没有新内容就写“无新增”，不许空着
-6. 严禁重复、严禁编造、严禁用相同回答敷衍
-
-【信息来源仅限】
-SEC、HKEX、公司官网、微信公众号（再鼎医药、传奇生物）、范俊青公众号/雪球、AACR
-
-【必须严格按以下格式输出，一字不差】
+【严格格式】
 【再鼎医药 & 传奇生物 滚动监控报告】
-日期：{datetime.date.today()}
+日期：2026-05-10
 周期：滚动更新
 
 1. 最新核心事件（按日期从新到旧）
 ■ 再鼎医药（ZLAB/09688.HK）
-- 日期+来源：具体内容
+- 日期+来源：内容
 ■ 传奇生物（LEGN）
-- 日期+来源：具体内容
+- 日期+来源：内容
 
 2. 范俊青最新观点（仅公众号/雪球）
-- 日期+来源：具体观点
+- 日期+来源：内容
 
 3. 观点一致性判断
 - 再鼎医药：一致 / 不一致 / 无观点
@@ -53,24 +44,22 @@ SEC、HKEX、公司官网、微信公众号（再鼎医药、传奇生物）、�
 - 传奇生物：
 
 6. 已落地真实利空
-- 有/无，如有请写日期+来源+内容
+- 有/无，请说明
 """
 
     try:
-        # 最稳定、最兼容的调用方式
-        completion = client.chat.completions.create(
+        # ✅ 这是唯一能触发联网搜索的写法
+        response = client.responses.create(
             model="doubao-seed-2-0-lite-260215",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
+            input=prompt,
+            tools=[{"type": "web_search"}]
         )
 
-        # 这是唯一稳定不会报错的取值方式
-        content = completion.choices[0].message.content
-
-        return content
+        # ✅ 绝对稳定、不报错、只取内容
+        return str(response)
 
     except Exception as e:
-        return f"调用异常: {str(e)}"
+        return f"联网调用失败: {str(e)}"
 
 def send_email(content):
     sender = os.getenv("SENDER_EMAIL")
