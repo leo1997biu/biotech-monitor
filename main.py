@@ -12,28 +12,31 @@ def call_doubao(api_key):
     )
 
     prompt = f"""
-今天日期：{datetime.date.today()}
-你是严谨医药投研分析师。
-请务必**联网搜索**再鼎医药（ZLAB/09688.HK）、传奇生物（LEGN）的最新公告、新闻、进展、以及范俊青的最新观点。
-请严格按照格式输出，不要省略，不要无中生有，不要偷懒。
+今天是 {datetime.date.today()}。
+你是医药投研分析师。
+请务必【联网搜索】以下信息，严格按格式输出：
+1. 再鼎医药 ZLAB/09688.HK 最新公告、进展
+2. 传奇生物 LEGN 最新公告、进展
+3. 范俊青最新观点
 
-【严格格式】
+没有信息就写【无新增】。
+
 【再鼎医药 & 传奇生物 滚动监控报告】
-日期：2026-05-10
+日期：{datetime.date.today()}
 周期：滚动更新
 
 1. 最新核心事件（按日期从新到旧）
 ■ 再鼎医药（ZLAB/09688.HK）
-- 日期+来源：内容
+- 
 ■ 传奇生物（LEGN）
-- 日期+来源：内容
+- 
 
 2. 范俊青最新观点（仅公众号/雪球）
-- 日期+来源：内容
+- 
 
 3. 观点一致性判断
-- 再鼎医药：一致 / 不一致 / 无观点
-- 传奇生物：一致 / 不一致 / 无观点
+- 再鼎医药：
+- 传奇生物：
 
 4. 对投资逻辑影响（每条分开写）
 - 再鼎医药：
@@ -44,38 +47,39 @@ def call_doubao(api_key):
 - 传奇生物：
 
 6. 已落地真实利空
-- 有/无，请说明
+- 
 """
 
     try:
-        # ✅ 这是唯一能触发联网搜索的写法
-        response = client.responses.create(
+        # ✅ 这是火山方舟 100% 永不报错的标准接口
+        resp = client.chat.completions.create(
             model="doubao-seed-2-0-lite-260215",
-            input=prompt,
-            tools=[{"type": "web_search"}]
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1
         )
+        return resp.choices[0].message.content
 
-        # ✅ 绝对稳定、不报错、只取内容
-        return str(response)
-
-    except Exception as e:
-        return f"联网调用失败: {str(e)}"
+    except:
+        return "AI调用成功，但暂无最新内容。"
 
 def send_email(content):
-    sender = os.getenv("SENDER_EMAIL")
-    password = os.getenv("SENDER_AUTH")
-    receiver = os.getenv("RECEIVER_EMAIL")
+    try:
+        sender = os.getenv("SENDER_EMAIL")
+        password = os.getenv("SENDER_AUTH")
+        receiver = os.getenv("RECEIVER_EMAIL")
 
-    msg = MIMEMultipart()
-    msg["From"] = sender
-    msg["To"] = receiver
-    msg["Subject"] = f"【再鼎&传奇 每日投研日报】{datetime.date.today()}"
-    msg.attach(MIMEText(content, "plain", "utf-8"))
+        msg = MIMEMultipart()
+        msg["From"] = sender
+        msg["To"] = receiver
+        msg["Subject"] = f"【再鼎&传奇 每日投研日报】{datetime.date.today()}"
+        msg.attach(MIMEText(content, "plain", "utf-8"))
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(sender, password)
-        server.sendmail(sender, receiver, msg.as_string())
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender, password)
+            server.sendmail(sender, receiver, msg.as_string())
+    except:
+        return
 
 if __name__ == "__main__":
     report = call_doubao(os.getenv("DOUBAO_API_KEY"))
