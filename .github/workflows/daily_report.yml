@@ -1,7 +1,7 @@
 name: Daily Report
 on:
   schedule:
-    - cron: "0 23 * * *"  # 北京时间 8:00 运行
+    - cron: "0 23 * * *"
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --upgrade volcenginesdkarkruntime requests
+          pip install volcenginesdkarkruntime requests
       - name: Run script
         run: python main.py
         env:
