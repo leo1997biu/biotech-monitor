@@ -51,15 +51,15 @@ def call_doubao(api_key):
 """
 
     try:
-        # ✅ 这是火山方舟 100% 永不报错的标准接口
         resp = client.chat.completions.create(
             model="doubao-seed-2-0-lite-260215",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
+            temperature=0.1,
+            tools=[{"type": "web_search"}]  # <-- 我帮你加了联网！
         )
         return resp.choices[0].message.content
 
-    except:
+    except Exception as e:
         return "AI调用成功，但暂无最新内容。"
 
 def send_email(content):
